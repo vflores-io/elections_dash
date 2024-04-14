@@ -375,6 +375,7 @@ static_bar_totals = create_total_bar_plot(df_ln_sx_qroo)
 
 # Create a Dash application
 app = Dash(__name__)
+server = app.server         # for deployment
 
 # Layout
 app.layout = html.Div([
