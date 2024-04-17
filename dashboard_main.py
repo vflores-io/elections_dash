@@ -2,7 +2,8 @@ import requests
 import pandas as pd
 import dash
 from dash import Dash, dcc, html, Input, Output
-import plotly.express as px  # Make sure to import necessary modules
+import plotly.express as px 
+import dash_bootstrap_components as dbc
 
 # generate variables and constants
 election_years = [year for year in range(2009, 2022, 3)]
@@ -305,6 +306,10 @@ def plot_election_pie_chart(selected_year, selected_municipality, df_re_all_year
     df_votes = pd.DataFrame(list(votes_by_party.items()), columns = ['Party', 'Votes'])
     fig = px.pie(df_votes, values = 'Votes', names = 'Party', 
                  title = f'Distribución de votos en {selected_municipality}, en {selected_year}')
+    
+    # Update the traces to remove the text labels
+    fig.update_traces(textinfo='none', hoverinfo='label+percent')
+
     return fig
 
 def plot_aggregated_votes_by_main_party_px(df_list, main_parties, selected_municipality, election_years):
@@ -341,11 +346,18 @@ def plot_aggregated_votes_by_main_party_px(df_list, main_parties, selected_munic
     
     # Customize the layout
     fig.update_traces(mode='lines', line=dict(width=2.5), fill='tozeroy')
-    fig.update_layout(xaxis_title='Election Year',
-                      yaxis_title='Total Votes',
-                      legend_title='Party',
+    fig.update_layout(xaxis_title='Año Electoral',
+                      yaxis_title='Votos Totales',
+                      legend_title='Partido',
                       font=dict(family="Arial, sans-serif", size=12, color="#333"),
-                      hovermode='x unified')
+                      hovermode='x unified',
+                      legend = dict(
+                          orientation = 'h',
+                          yanchor = 'bottom',
+                          y = -0.6, # adjuist to fit layout
+                          xanchor = 'center',
+                          x = 0.5
+                      ))
     
     return fig
 
@@ -375,28 +387,48 @@ static_bar_totals = create_total_bar_plot(df_ln_sx_qroo)
 
 # Create a Dash application
 app = Dash(__name__)
-server = app.server         # for deployment
+
+# Assuming you're fine with adding Bootstrap to your project
+app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 
 # Layout
-app.layout = html.Div([
-    html.H1("Election Data Dashboard"),
-    dcc.Dropdown(
-        id='year-dropdown',
-        options=[{'label': year, 'value': year} for year in sorted(set(election_years))],
-        value=sorted(set(election_years))[0]  # Default to the earliest year
-    ),
-    dcc.Dropdown(
-        id='municipio-dropdown',
-      # Options set dynamically based on selected year
-    ),
-    dcc.Graph(id='time-series-plot'),
-    dcc.Graph(id='pie-chart'),
-    dcc.Graph(id='choropleth-winning'),
-    dcc.Graph(id='choropleth-women', figure=static_choropleth_percentage_women),
-    dcc.Graph(id='choropleth-age', figure=static_choropleth_age),
-    dcc.Graph(id='bar-total-voters', figure=static_bar_totals),
-    dcc.Graph(id='choropleth-total-voters', figure=static_choropleth_totals)
-])
+app.layout = dbc.Container([
+    html.H1("Estadísticas de Elecciones", className='mb-4'),  # mb-4 is margin-bottom for spacing
+    dbc.Row([
+        dbc.Col(dcc.Dropdown(
+            id='year-dropdown',
+            options=[{'label': year, 'value': year} for year in sorted(set(election_years))],
+            value=sorted(set(election_years))[0],
+            className='mb-2',  # margin bottom
+        ), width=6),  # Taking half width
+        dbc.Col(dcc.Dropdown(
+            id='municipio-dropdown'
+            # Options set dynamically based on selected year
+        ), width=6)
+    ]),
+   
+    dbc.Row([
+        dbc.Col(dcc.Graph(id='time-series-plot'), width=6)
+    ], justify = 'center'),
+
+    dbc.Row([
+        dbc.Col(dcc.Graph(id='pie-chart'), width=6)
+    ], justify = 'center'),
+    
+    dbc.Row([
+        dbc.Col(dcc.Graph(id='choropleth-winning'), width=6)
+    ], justify='center'),
+    
+    dbc.Row([
+        dbc.Col(dcc.Graph(id='choropleth-women', figure = static_choropleth_percentage_women), width=4),
+        dbc.Col(dcc.Graph(id='choropleth-age', figure = static_choropleth_age), width=4)        
+    ], justify = 'center'),
+    
+    dbc.Row([
+        dbc.Col(dcc.Graph(id='bar-total-voters', figure = static_bar_totals), width=6),
+        dbc.Col(dcc.Graph(id='choropleth-total-voters', figure = static_choropleth_totals), width=4)
+    ])
+], fluid=True)
 
 # Callback to update municipio dropdown based on year selection
 @app.callback(
@@ -407,7 +439,6 @@ app.layout = html.Div([
 def set_municipio_options(selected_year):
     # Assuming a function that returns municipios for a given year
     municipalities = get_municipalities_per_year(df_dict, selected_year)
-    print(f"Options for {selected_year}: {municipalities}")  # Debug print
     options = [{'label': m, 'value': m} for m in municipalities]
     new_value = municipalities[0] if municipalities else None  # Default to first municipality or None
     return options, new_value
@@ -421,8 +452,6 @@ def set_municipio_options(selected_year):
      Input('municipio-dropdown', 'value')]
 )
 def update_visualizations(selected_year, selected_municipality):
-    print(f"Received Year: {selected_year}")
-    print(f"Received Municipality: {selected_municipality}")
     time_series_chart = plot_aggregated_votes_by_main_party_px(df_re_all_years, main_parties, selected_municipality, election_years)
     pie_chart_per_municipality_per_year = plot_election_pie_chart(selected_year, selected_municipality, df_re_all_years, main_parties)
     choropleth_winning_party_per_year = create_winning_party_per_year_choropleth(selected_year, geojson_data, main_parties, df_dict)
