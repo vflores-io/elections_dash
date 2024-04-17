@@ -387,6 +387,7 @@ static_bar_totals = create_total_bar_plot(df_ln_sx_qroo)
 
 # Create a Dash application
 app = Dash(__name__)
+server = app.server
 
 # Assuming you're fine with adding Bootstrap to your project
 app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
@@ -460,4 +461,4 @@ def update_visualizations(selected_year, selected_municipality):
 
 
 if __name__ == '__main__':
-    app.run_server(debug=True)
+    app.run_server()
