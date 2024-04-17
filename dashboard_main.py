@@ -477,4 +477,4 @@ def update_visualizations(selected_year, selected_municipality):
 
 
 if __name__ == '__main__':
-    app.run_server()
+    app.run_server(debug=True)
