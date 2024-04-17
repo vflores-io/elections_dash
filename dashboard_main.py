@@ -87,18 +87,34 @@ response = requests.get(geojson_url)
 geojson_data = response.json() if response.status_code == 200 else None
 
 
-df_ln_sx_qroo = pd.read_csv('https://raw.githubusercontent.com/vflores-io/elections_dash/main/data/cleaned_lista_nominal_sexo.csv')
+# df_ln_sx_qroo = pd.read_csv('https://raw.githubusercontent.com/vflores-io/elections_dash/main/data/cleaned_lista_nominal_sexo.csv')
 
-df_ln_age_qroo = pd.read_csv('https://raw.githubusercontent.com/vflores-io/elections_dash/main/data/cleaned_lista_nominal_edad.csv')
+# df_ln_age_qroo = pd.read_csv('https://raw.githubusercontent.com/vflores-io/elections_dash/main/data/cleaned_lista_nominal_edad.csv')
+
+# csv_urls = [
+#     'https://raw.githubusercontent.com/vflores-io/elections_dash/main/data/cleaned_results_2009.csv',
+#     'https://raw.githubusercontent.com/vflores-io/elections_dash/main/data/cleaned_results_2012.csv',
+#     'https://raw.githubusercontent.com/vflores-io/elections_dash/main/data/cleaned_results_2015.csv',
+#     'https://raw.githubusercontent.com/vflores-io/elections_dash/main/data/cleaned_results_2018.csv',
+#     'https://raw.githubusercontent.com/vflores-io/elections_dash/main/data/cleaned_results_2021.csv'
+#     # Add more URLs as needed
+# ]
+
+
+
+df_ln_sx_qroo = pd.read_csv('data/cleaned_lista_nominal_sexo.csv')
+
+df_ln_age_qroo = pd.read_csv('data/cleaned_lista_nominal_edad.csv')
 
 csv_urls = [
-    'https://raw.githubusercontent.com/vflores-io/elections_dash/main/data/cleaned_results_2009.csv',
-    'https://raw.githubusercontent.com/vflores-io/elections_dash/main/data/cleaned_results_2012.csv',
-    'https://raw.githubusercontent.com/vflores-io/elections_dash/main/data/cleaned_results_2015.csv',
-    'https://raw.githubusercontent.com/vflores-io/elections_dash/main/data/cleaned_results_2018.csv',
-    'https://raw.githubusercontent.com/vflores-io/elections_dash/main/data/cleaned_results_2021.csv'
+    'data/cleaned_results_2009.csv',
+    'data/cleaned_results_2012.csv',
+    'data/cleaned_results_2015.csv',
+    'data/cleaned_results_2018.csv',
+    'data/cleaned_results_2021.csv'
     # Add more URLs as needed
 ]
+
 
 # Load each CSV file into a DataFrame 
 df_re_2009_qroo = pd.read_csv(csv_urls[0])
