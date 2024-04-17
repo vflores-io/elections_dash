@@ -402,11 +402,12 @@ static_bar_totals = create_total_bar_plot(df_ln_sx_qroo)
 
 
 # Create a Dash application
-app = Dash(__name__)
-server = app.server
+# app = Dash(__name__)
+
 
 # Assuming you're fine with adding Bootstrap to your project
 app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
+server = app.server
 
 # Layout
 app.layout = dbc.Container([
