@@ -87,33 +87,33 @@ response = requests.get(geojson_url)
 geojson_data = response.json() if response.status_code == 200 else None
 
 
-# df_ln_sx_qroo = pd.read_csv('https://raw.githubusercontent.com/vflores-io/elections_dash/main/data/cleaned_lista_nominal_sexo.csv')
+df_ln_sx_qroo = pd.read_csv('https://raw.githubusercontent.com/vflores-io/elections_dash/main/data/cleaned_lista_nominal_sexo.csv')
 
-# df_ln_age_qroo = pd.read_csv('https://raw.githubusercontent.com/vflores-io/elections_dash/main/data/cleaned_lista_nominal_edad.csv')
-
-# csv_urls = [
-#     'https://raw.githubusercontent.com/vflores-io/elections_dash/main/data/cleaned_results_2009.csv',
-#     'https://raw.githubusercontent.com/vflores-io/elections_dash/main/data/cleaned_results_2012.csv',
-#     'https://raw.githubusercontent.com/vflores-io/elections_dash/main/data/cleaned_results_2015.csv',
-#     'https://raw.githubusercontent.com/vflores-io/elections_dash/main/data/cleaned_results_2018.csv',
-#     'https://raw.githubusercontent.com/vflores-io/elections_dash/main/data/cleaned_results_2021.csv'
-#     # Add more URLs as needed
-# ]
-
-
-
-df_ln_sx_qroo = pd.read_csv('data/cleaned_lista_nominal_sexo.csv')
-
-df_ln_age_qroo = pd.read_csv('data/cleaned_lista_nominal_edad.csv')
+df_ln_age_qroo = pd.read_csv('https://raw.githubusercontent.com/vflores-io/elections_dash/main/data/cleaned_lista_nominal_edad.csv')
 
 csv_urls = [
-    'data/cleaned_results_2009.csv',
-    'data/cleaned_results_2012.csv',
-    'data/cleaned_results_2015.csv',
-    'data/cleaned_results_2018.csv',
-    'data/cleaned_results_2021.csv'
+    'https://raw.githubusercontent.com/vflores-io/elections_dash/main/data/cleaned_results_2009.csv',
+    'https://raw.githubusercontent.com/vflores-io/elections_dash/main/data/cleaned_results_2012.csv',
+    'https://raw.githubusercontent.com/vflores-io/elections_dash/main/data/cleaned_results_2015.csv',
+    'https://raw.githubusercontent.com/vflores-io/elections_dash/main/data/cleaned_results_2018.csv',
+    'https://raw.githubusercontent.com/vflores-io/elections_dash/main/data/cleaned_results_2021.csv'
     # Add more URLs as needed
 ]
+
+
+
+# df_ln_sx_qroo = pd.read_csv('data/cleaned_lista_nominal_sexo.csv')
+
+# df_ln_age_qroo = pd.read_csv('data/cleaned_lista_nominal_edad.csv')
+
+# csv_urls = [
+#     'data/cleaned_results_2009.csv',
+#     'data/cleaned_results_2012.csv',
+#     'data/cleaned_results_2015.csv',
+#     'data/cleaned_results_2018.csv',
+#     'data/cleaned_results_2021.csv'
+#     # Add more URLs as needed
+# ]
 
 
 # Load each CSV file into a DataFrame 
@@ -203,6 +203,18 @@ def create_total_choropleth(df, geojson):
                                 title="Lista Nominal por Municipio")
     fig_choropleth_totals.update_geos(fitbounds="locations", visible=False)
     
+    fig_choropleth_totals.update_layout(
+        coloraxis_colorbar = dict(
+            title = 'Total Lista Nominal',
+            orientation= 'h',
+            x = 0.5,
+            xanchor = 'center',
+            y = -0.2,
+            thickness = 10,
+            len = 0.65
+            )                      
+    )
+    
     return fig_choropleth_totals
 
 
@@ -256,6 +268,19 @@ def create_gender_proportion_choropleth(df, geojson_data):
     )
 
     fig.update_geos(fitbounds="locations", visible=False)
+    
+    # Update layout for colorbar position
+    fig.update_layout(
+    coloraxis_colorbar=dict(
+        title='Porcentaje Mujeres',
+        orientation='h',
+        x=0.5,
+        xanchor='center',
+        y=-0.2,
+        thickness=10,  # Adjust the thickness of the colorbar
+        len=0.65       # Set the length as a fraction of the plot area width
+        )
+    )
     return fig
 
 
@@ -276,14 +301,14 @@ def create_winning_party_per_year_choropleth(selected_year, geojson, main_partie
         winning_party = max(votes_by_party, key=votes_by_party.get)
         winning_party_by_municipality[municipality] = winning_party
 
-    df_map = pd.DataFrame(list(winning_party_by_municipality.items()), columns=['MUNICIPIO', 'WinningParty'])
+    df_map = pd.DataFrame(list(winning_party_by_municipality.items()), columns=['MUNICIPIO', 'Partido Ganador'])
     df_map['Year'] = selected_year
 
     fig = px.choropleth(
         df_map, 
         geojson=geojson, 
         locations='MUNICIPIO', 
-        color='WinningParty',
+        color='Partido Ganador',
         featureidkey="properties.NOMGEO",  
         projection="mercator",
     )
@@ -373,6 +398,11 @@ def plot_aggregated_votes_by_main_party_px(df_list, main_parties, selected_munic
                           y = -0.6, # adjuist to fit layout
                           xanchor = 'center',
                           x = 0.5
+                      ),
+                      xaxis = dict(
+                          tickmode = 'array',
+                          tickvals = election_years,  # set the tick values to the election years
+                          ticktext = election_years
                       ))
     
     return fig
@@ -410,43 +440,37 @@ app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 server = app.server
 
 # Layout
-app.layout = dbc.Container([
-    html.H1("Estadísticas de Elecciones", className='mb-4'),  # mb-4 is margin-bottom for spacing
+app.layout = html.Div([
+    html.H1("Estadísticas de Elecciones", className='mb-4'),  # Added margin-bottom for spacing
     dbc.Row([
-        dbc.Col(dcc.Dropdown(
-            id='year-dropdown',
-            options=[{'label': year, 'value': year} for year in sorted(set(election_years))],
-            value=sorted(set(election_years))[0],
-            className='mb-2',  # margin bottom
-        ), width=6),  # Taking half width
-        dbc.Col(dcc.Dropdown(
-            id='municipio-dropdown'
-            # Options set dynamically based on selected year
-        ), width=6)
+        dbc.Col(
+            dcc.Dropdown(
+                id='year-dropdown',
+                options=[{'label': year, 'value': year} for year in sorted(set(election_years))],
+                value=sorted(set(election_years))[0],  # Default to the earliest year
+            ),
+            width={"size": 6, "offset": 0},  # Adjust size as needed
+            className='mb-4'  # Added margin-bottom for spacing
+        ),
     ]),
-   
     dbc.Row([
-        dbc.Col(dcc.Graph(id='time-series-plot'), width=6)
-    ], justify = 'center'),
-
-    dbc.Row([
-        dbc.Col(dcc.Graph(id='pie-chart'), width=6)
-    ], justify = 'center'),
-    
-    dbc.Row([
-        dbc.Col(dcc.Graph(id='choropleth-winning'), width=6)
-    ], justify='center'),
-    
-    dbc.Row([
-        dbc.Col(dcc.Graph(id='choropleth-women', figure = static_choropleth_percentage_women), width=4),
-        dbc.Col(dcc.Graph(id='choropleth-age', figure = static_choropleth_age), width=4)        
-    ], justify = 'center'),
-    
-    dbc.Row([
-        dbc.Col(dcc.Graph(id='bar-total-voters', figure = static_bar_totals), width=6),
-        dbc.Col(dcc.Graph(id='choropleth-total-voters', figure = static_choropleth_totals), width=4)
-    ])
-], fluid=True)
+        dbc.Col(
+            dcc.Dropdown(
+                id='municipio-dropdown',
+                # Options set dynamically based on selected year
+            ),
+            width={"size": 6, "offset": 0},  # Adjust size as needed
+            className='mb-4'  # Added margin-bottom for spacing
+        ),
+    ]),
+    dcc.Graph(id='time-series-plot'),
+    dcc.Graph(id='pie-chart'),
+    dcc.Graph(id='choropleth-winning'),
+    dcc.Graph(id='choropleth-women', figure=static_choropleth_percentage_women),
+    dcc.Graph(id='choropleth-age', figure=static_choropleth_age),
+    dcc.Graph(id='bar-total-voters', figure=static_bar_totals),
+    dcc.Graph(id='choropleth-total-voters', figure=static_choropleth_totals)
+])
 
 # Callback to update municipio dropdown based on year selection
 @app.callback(
