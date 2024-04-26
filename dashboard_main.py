@@ -185,7 +185,7 @@ def create_total_choropleth(df, geojson):
                                 featureidkey="properties.NOMGEO",  # Adjust based on your GeoJSON properties
                                 projection="mercator",
                                 color_continuous_scale="Portland",
-                                title="Lista Nominal por Municipio")
+                                title="Lista Nominal (2024)")
     fig_choropleth_totals.update_geos(fitbounds="locations", visible=False)
     
     fig_choropleth_totals.update_layout(
@@ -225,7 +225,7 @@ def create_age_choropleth(df, geojson):
         featureidkey="properties.NOMGEO",
         color_continuous_scale=px.colors.sequential.Plasma,
         projection="mercator",
-        title="Rango de Edad y Género Predominantes en la Lista Nominal (2024) Por Municipio"
+        title="Rango Edad y Género Predominantes Lista Nominal (2024)"
     )
 
     fig.update_geos(fitbounds="locations", visible=False)
@@ -249,7 +249,7 @@ def create_gender_proportion_choropleth(df, geojson_data):
         featureidkey="properties.NOMGEO",
         color_continuous_scale=px.colors.sequential.Plasma,
         projection="mercator",
-        title="Porcentaje de Mujeres en la Lista Nominal (2024)"
+        title="Porcentaje Mujeres Lista Nominal (2024)"
     )
 
     fig.update_geos(fitbounds="locations", visible=False)
@@ -425,7 +425,7 @@ def create_voter_turnout_proportion_choropleth(df_resultados, selected_year, geo
         featureidkey="properties.NOMGEO",
         color_continuous_scale=px.colors.sequential.YlOrRd,
         projection="mercator",
-        title=f"Porcentaje de Votantes de Lista Nominal en {selected_year}"
+        title=f"Porcentaje de Votantes Lista Nominal {selected_year}"
     )
 
     fig.update_geos(fitbounds="locations", visible=False)
@@ -433,7 +433,7 @@ def create_voter_turnout_proportion_choropleth(df_resultados, selected_year, geo
     # Update layout for colorbar position
     fig.update_layout(
     coloraxis_colorbar=dict(
-        title=(f'Porcentaje Votantes de la Lista Nominal en {selected_year}'),
+        title=(f'Porcentaje Votantes'),
         orientation='h',
         x=0.5,
         xanchor='center',
