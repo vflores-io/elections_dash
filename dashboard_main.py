@@ -101,21 +101,6 @@ csv_urls = [
 ]
 
 
-
-# df_ln_sx_qroo = pd.read_csv('data/cleaned_lista_nominal_sexo.csv')
-
-# df_ln_age_qroo = pd.read_csv('data/cleaned_lista_nominal_edad.csv')
-
-# csv_urls = [
-#     'data/cleaned_results_2009.csv',
-#     'data/cleaned_results_2012.csv',
-#     'data/cleaned_results_2015.csv',
-#     'data/cleaned_results_2018.csv',
-#     'data/cleaned_results_2021.csv'
-#     # Add more URLs as needed
-# ]
-
-
 # Load each CSV file into a DataFrame 
 df_re_2009_qroo = pd.read_csv(csv_urls[0])
 df_re_2012_qroo = pd.read_csv(csv_urls[1])
@@ -205,7 +190,7 @@ def create_total_choropleth(df, geojson):
     
     fig_choropleth_totals.update_layout(
         coloraxis_colorbar = dict(
-            title = 'Total Lista Nominal',
+            title = 'Total Lista Nominal (2024)',
             orientation= 'h',
             x = 0.5,
             xanchor = 'center',
@@ -240,7 +225,7 @@ def create_age_choropleth(df, geojson):
         featureidkey="properties.NOMGEO",
         color_continuous_scale=px.colors.sequential.Plasma,
         projection="mercator",
-        title="Rango de Edad y Genero Predominantes en la Lista Nominal Por Municipio"
+        title="Rango de Edad y Género Predominantes en la Lista Nominal (2024) Por Municipio"
     )
 
     fig.update_geos(fitbounds="locations", visible=False)
@@ -264,7 +249,7 @@ def create_gender_proportion_choropleth(df, geojson_data):
         featureidkey="properties.NOMGEO",
         color_continuous_scale=px.colors.sequential.Plasma,
         projection="mercator",
-        title="Porcentaje de Mujeres en la Lista Nominal"
+        title="Porcentaje de Mujeres en la Lista Nominal (2024)"
     )
 
     fig.update_geos(fitbounds="locations", visible=False)
@@ -282,6 +267,8 @@ def create_gender_proportion_choropleth(df, geojson_data):
         )
     )
     return fig
+
+
 
 
 def create_winning_party_per_year_choropleth(selected_year, geojson, main_parties, df_dict):
@@ -420,15 +407,50 @@ def get_municipalities_per_year(df_dict, selected_year):
     return sorted(df_selected['MUNICIPIO'].unique())
 
 
+def create_voter_turnout_proportion_choropleth(df_resultados, selected_year, geojson_data):
+    # Aggregate data by MUNICIPIO if not already aggregated
+    df_grouped = df_resultados.groupby('MUNICIPIO').agg({
+    'TOTAL_VOTOS': 'sum',
+    'LISTA_NOMINAL': 'sum'
+    }).reset_index()
+
+    df_grouped['Porcentaje Votantes'] = df_grouped['TOTAL_VOTOS'] / df_grouped['LISTA_NOMINAL'] * 100
+
+    # Assuming `geojson` is your GeoJSON object for the municipalities
+    fig = px.choropleth(
+        df_grouped,
+        geojson=geojson_data,
+        locations='MUNICIPIO',
+        color='Porcentaje Votantes',
+        featureidkey="properties.NOMGEO",
+        color_continuous_scale=px.colors.sequential.YlOrRd,
+        projection="mercator",
+        title=f"Porcentaje de Votantes de Lista Nominal en {selected_year}"
+    )
+
+    fig.update_geos(fitbounds="locations", visible=False)
+    
+    # Update layout for colorbar position
+    fig.update_layout(
+    coloraxis_colorbar=dict(
+        title=(f'Porcentaje Votantes de la Lista Nominal en {selected_year}'),
+        orientation='h',
+        x=0.5,
+        xanchor='center',
+        y=-0.2,
+        thickness=10,  # Adjust the thickness of the colorbar
+        len=0.65       # Set the length as a fraction of the plot area width
+        )
+    )
+    return fig
+
+
+# static figures:
+
 static_choropleth_percentage_women = create_gender_proportion_choropleth(df_ln_sx_qroo, geojson_data)
 static_choropleth_age = create_age_choropleth(df_ln_age_qroo, geojson_data)
 static_choropleth_totals = create_total_choropleth(df_ln_sx_qroo, geojson_data)
 static_bar_totals = create_total_bar_plot(df_ln_sx_qroo)
-
-
-# apply the vote split function to all the dataframes:
-
-
 
 
 # Create a Dash application
@@ -466,6 +488,7 @@ app.layout = html.Div([
     dcc.Graph(id='time-series-plot'),
     dcc.Graph(id='pie-chart'),
     dcc.Graph(id='choropleth-winning'),
+    dcc.Graph(id='choropleth-turnout'),
     dcc.Graph(id='choropleth-women', figure=static_choropleth_percentage_women),
     dcc.Graph(id='choropleth-age', figure=static_choropleth_age),
     dcc.Graph(id='bar-total-voters', figure=static_bar_totals),
@@ -489,15 +512,41 @@ def set_municipio_options(selected_year):
 @app.callback(
     [Output('time-series-plot', 'figure'),
      Output('pie-chart', 'figure'),
-     Output('choropleth-winning', 'figure')],
+     Output('choropleth-winning', 'figure'),
+     Output('choropleth-turnout', 'figure')],
     [Input('year-dropdown', 'value'),
      Input('municipio-dropdown', 'value')]
 )
 def update_visualizations(selected_year, selected_municipality):
-    time_series_chart = plot_aggregated_votes_by_main_party_px(df_re_all_years, main_parties, selected_municipality, election_years)
-    pie_chart_per_municipality_per_year = plot_election_pie_chart(selected_year, selected_municipality, df_re_all_years, main_parties)
-    choropleth_winning_party_per_year = create_winning_party_per_year_choropleth(selected_year, geojson_data, main_parties, df_dict)
-    return time_series_chart, pie_chart_per_municipality_per_year, choropleth_winning_party_per_year
+    time_series_chart = plot_aggregated_votes_by_main_party_px(
+        df_re_all_years, 
+        main_parties, 
+        selected_municipality, 
+        election_years
+        )
+    
+    pie_chart_per_municipality_per_year = plot_election_pie_chart(
+        selected_year, 
+        selected_municipality, 
+        df_re_all_years, 
+        main_parties
+        )
+    
+    choropleth_winning_party_per_year = create_winning_party_per_year_choropleth(
+        selected_year, 
+        geojson_data, 
+        main_parties, 
+        df_dict
+        )
+    
+    df_resultados = df_dict[selected_year]
+    voter_proportion_choropleth = create_voter_turnout_proportion_choropleth(df_resultados, selected_year, geojson_data)
+
+
+    return (time_series_chart,
+            pie_chart_per_municipality_per_year, 
+            choropleth_winning_party_per_year,
+            voter_proportion_choropleth)
 
 
 
