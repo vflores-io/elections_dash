@@ -136,11 +136,12 @@ def create_total_bar_plot(df):
     y=['Lista Hombres','Lista Mujeres'],
     labels = {'value': 'Lista Nominal',
             'variable': ''}, 
-    title="Registered Voters per Municipality",
+    title="Lista Nominal por Municipio",
     color_discrete_sequence=px.colors.qualitative.Dark24
     )
 
     # make a dictionary for abbreviated municipality names
+
     abb_mun_dict = {
         'BACALAR': 'BCL',
         'BENITO JUAREZ': 'BJ',
@@ -160,7 +161,7 @@ def create_total_bar_plot(df):
             tickvals = df_ln_qroo_totals['Nombre Municipio'],  # Original names
             ticktext = [abb_mun_dict.get(name, name) for name in  df_ln_qroo_totals['Nombre Municipio']]  # Abbreviated names
         ),
-        yaxis = dict(title = 'Registered Voters'),
+        yaxis = dict(title = 'Lista Nominal'),
         plot_bgcolor = 'rgba(0,0,0,0)', # transparent background
         uniformtext_minsize = 8,  # ensure text size is legible
         uniformtext_mode = 'hide', # hide text if it doesn't fit
@@ -184,12 +185,12 @@ def create_total_choropleth(df, geojson):
                                 featureidkey="properties.NOMGEO",  # Adjust based on your GeoJSON properties
                                 projection="mercator",
                                 color_continuous_scale="Portland",
-                                title="Registered Voters per Municipality")
+                                title="Lista Nominal (2024)")
     fig_choropleth_totals.update_geos(fitbounds="locations", visible=False)
     
     fig_choropleth_totals.update_layout(
         coloraxis_colorbar = dict(
-            title = 'Total Registered Voters',
+            title = 'Total Lista Nominal (2024)',
             orientation= 'h',
             x = 0.5,
             xanchor = 'center',
@@ -198,7 +199,7 @@ def create_total_choropleth(df, geojson):
             len = 0.65
             )                      
     )
-
+    
     return fig_choropleth_totals
 
 
@@ -224,7 +225,7 @@ def create_age_choropleth(df, geojson):
         featureidkey="properties.NOMGEO",
         color_continuous_scale=px.colors.sequential.Plasma,
         projection="mercator",
-        title="Predominant Gender and Age Range in Voter Registration"
+        title="Rango Edad y Género Predominantes Lista Nominal (2024)"
     )
 
     fig.update_geos(fitbounds="locations", visible=False)
@@ -248,15 +249,15 @@ def create_gender_proportion_choropleth(df, geojson_data):
         featureidkey="properties.NOMGEO",
         color_continuous_scale=px.colors.sequential.Plasma,
         projection="mercator",
-        title="Percentage of Women in Voter Registration"
+        title="Porcentaje Mujeres Lista Nominal (2024)"
     )
 
     fig.update_geos(fitbounds="locations", visible=False)
-
+    
     # Update layout for colorbar position
     fig.update_layout(
     coloraxis_colorbar=dict(
-        title='Women Percentage',
+        title='Porcentaje Mujeres',
         orientation='h',
         x=0.5,
         xanchor='center',
@@ -279,11 +280,6 @@ def create_winning_party_per_year_choropleth(selected_year, geojson, main_partie
     
     for municipality in df_year['MUNICIPIO'].unique():
         votes_by_party = {main_party: 0 for main_party in main_parties}
-        # for main_party, parties in alliance_mapping.items():
-        #     for party in parties:
-        #         if party in df_year.columns:
-        #             votes_by_party[main_party] += df_year.loc[df_year['MUNICIPIO'] == municipality, party].sum()
-
         for party in main_parties:
             if party in df_year.columns:
                 votes_by_party[party] += df_year.loc[df_year['MUNICIPIO'] == municipality, party].sum()
@@ -304,9 +300,9 @@ def create_winning_party_per_year_choropleth(selected_year, geojson, main_partie
         projection="mercator",
     )
     fig.update_geos(fitbounds="locations", visible=False)
-    fig.update_layout(title=f"Winning Party per Municipality, {selected_year}")
+    fig.update_layout(title=f"Partido Ganador por Municipio en Quintana Roo, {selected_year}")
     
-    return fig
+    return fig  # Return the figure for this specific year
 
 def plot_election_pie_chart(selected_year, selected_municipality, df_re_all_years, main_parties):
 
@@ -337,13 +333,12 @@ def plot_election_pie_chart(selected_year, selected_municipality, df_re_all_year
     # create the pie chart
     df_votes = pd.DataFrame(list(votes_by_party.items()), columns = ['Party', 'Votes'])
     fig = px.pie(df_votes, values = 'Votes', names = 'Party', 
-                 title = f'Vote Distribution in {selected_municipality}, {selected_year}')
+                 title = f'Distribución de votos en {selected_municipality}, en {selected_year}')
     
     # Update the traces to remove the text labels
     fig.update_traces(textinfo='none', hoverinfo='label+percent')
 
     return fig
-
 
 def plot_aggregated_votes_by_main_party_px(df_list, main_parties, selected_municipality, election_years):
     """
@@ -351,37 +346,37 @@ def plot_aggregated_votes_by_main_party_px(df_list, main_parties, selected_munic
     in a selected municipality across elections using Plotly Express. This approximates the non-stacked
     area plot behavior of the original function.
     """
-    # initialize dictionary to hold vote totals for main parties
+    # Initialize dictionary to hold vote totals for main parties
     votes_by_main_party = {main_party: [0] * len(election_years) for main_party in main_parties}
 
-    # loop through each DataFrame and year
+    # Loop through each DataFrame and year
     for i, (df, year) in enumerate(zip(df_list, election_years)):
-        # filter the DataFrame for the selected municipality
+        # Filter the DataFrame for the selected municipality
         if selected_municipality in df['MUNICIPIO'].values:
             filtered_df = df[df['MUNICIPIO'] == selected_municipality]
             
-            # loop through each main party and its alliances
+            # Loop through each main party and its alliances
             for party in main_parties:
-                # aggregate votes for each party in the alliance, adding to the main party's total
+                # Aggregate votes for each party in the alliance, adding to the main party's total
                 if party in filtered_df.columns:
                     votes_by_main_party[party][i] += filtered_df[party].sum()
 
-    # prepare the data for plotting
+    # Prepare the data for plotting
     data_for_plotting = []
     for main_party, votes in votes_by_main_party.items():
         for year, vote in zip(election_years, votes):
             data_for_plotting.append({'Election Year': year, 'Total Votes': vote, 'Party': main_party})
     df_plot = pd.DataFrame(data_for_plotting)
 
-    # create the plot
+    # Create the plot
     fig = px.line(df_plot, x='Election Year', y='Total Votes', color='Party',
-                  line_shape='linear', title=f'Total Votes per Party (Including Alliances), in {selected_municipality}')
+                  line_shape='linear', title=f'Votos Totales por Partido (incluidas alianzas) en {selected_municipality}')
     
-    # customize the layout
+    # Customize the layout
     fig.update_traces(mode='lines', line=dict(width=2.5), fill='tozeroy')
-    fig.update_layout(xaxis_title='Election Year',
-                      yaxis_title='Total Votes',
-                      legend_title='Party',
+    fig.update_layout(xaxis_title='Año Electoral',
+                      yaxis_title='Votos Totales',
+                      legend_title='Partido',
                       font=dict(family="Arial, sans-serif", size=12, color="#333"),
                       hovermode='x unified',
                       legend = dict(
@@ -390,12 +385,18 @@ def plot_aggregated_votes_by_main_party_px(df_list, main_parties, selected_munic
                           y = -0.6, # adjuist to fit layout
                           xanchor = 'center',
                           x = 0.5
+                      ),
+                      xaxis = dict(
+                          tickmode = 'array',
+                          tickvals = election_years,  # set the tick values to the election years
+                          ticktext = election_years
                       ))
     
     return fig
 
 
-# HELPER function to get the municipalities per selected year
+
+# function to get the municipalities per selected year
 def get_municipalities_per_year(df_dict, selected_year):
     df_selected = df_dict.get(selected_year)
     if df_selected is None:
@@ -424,7 +425,7 @@ def create_voter_turnout_proportion_choropleth(df_resultados, selected_year, geo
         featureidkey="properties.NOMGEO",
         color_continuous_scale=px.colors.sequential.YlOrRd,
         projection="mercator",
-        title=f"Porcentaje de Votantes de Lista Nominal en {selected_year}"
+        title=f"Porcentaje de Votantes Lista Nominal {selected_year}"
     )
 
     fig.update_geos(fitbounds="locations", visible=False)
@@ -432,7 +433,7 @@ def create_voter_turnout_proportion_choropleth(df_resultados, selected_year, geo
     # Update layout for colorbar position
     fig.update_layout(
     coloraxis_colorbar=dict(
-        title=(f'Voter Turnout Percentage in {selected_year}'),
+        title=(f'Porcentaje Votantes'),
         orientation='h',
         x=0.5,
         xanchor='center',
@@ -462,7 +463,7 @@ server = app.server
 
 # Layout
 app.layout = html.Div([
-    html.H1("Elections Dashboard", className='mb-4'),  # Added margin-bottom for spacing
+    html.H1("Estadísticas de Elecciones", className='mb-4'),  # Added margin-bottom for spacing
     dbc.Row([
         dbc.Col(
             dcc.Dropdown(
