@@ -1,0 +1,31 @@
+ochre_scale = [
+        [0.0, '#4c78c8'],  # Blue
+        [0.1, '#f58518'],  # Light ochre (yellow)
+        [0.2, '#e45756'],  # Yellow ochre
+        [0.3, '#72b7b2'],  # Golden ochre
+        [0.4, '#54a24b'],  # Ochre
+        [0.5, '#eeca3b'],  # Dark ochre
+        [0.6, '#b279a2'],  # Brown ochre
+        [0.7, '#ff9da6'],  # Dark brown
+        [0.8, '#9d755d'],  # Darker brown
+        [0.9, '#bab0ac'],  # Deep brown
+        [1.0, '#331a00']
+       ]   # Very dark brown
+
+
+# ai
+
+# Custom ochre color scale
+    ochre_scale = [
+        [0.0, '#1f77b4'],  # Blue
+        [0.1, '#ffdd44'],  # Light ochre (yellow)
+        [0.2, '#ffcc00'],  # Yellow ochre
+        [0.3, '#e6ac00'],  # Golden ochre
+        [0.4, '#cc8400'],  # Ochre
+        [0.5, '#b36b00'],  # Dark ochre
+        [0.6, '#996600'],  # Brown ochre
+        [0.7, '#804000'],  # Dark brown
+        [0.8, '#663300'],  # Darker brown
+        [0.9, '#4d2600'],  # Deep brown
+        [1.0, '#331a00']
+       ]   # Very dark brown

@@ -126,19 +126,22 @@ df_dict = {
 
 def create_total_bar_plot(df):
 
+    df.rename(columns={'Lista Hombres': 'Registered Men', 'Lista Mujeres': 'Registered Women', 'Lista Nominal': 'Total Registered'}, inplace = True)
+
+
     # group data
 
-    df_ln_qroo_totals = df.groupby(['Nombre Municipio'])[['Lista Hombres', 'Lista Mujeres', 'Lista Nominal']].sum().reset_index()
+    df_ln_qroo_totals = df.groupby(['Nombre Municipio'])[['Registered Men', 'Registered Women', 'Total Registered']].sum().reset_index()
 
     fig_bar_totals = px.bar(
-    df_ln_qroo_totals,
-    x='Nombre Municipio', 
-    y=['Lista Hombres','Lista Mujeres'],
-    labels = {'value': 'Lista Nominal',
-            'variable': ''}, 
-    title="Registered Voters per Municipality",
-    color_discrete_sequence=px.colors.qualitative.Dark24
-    )
+        df_ln_qroo_totals,
+        x='Nombre Municipio', 
+        y=['Registered Men', 'Registered Women'],
+        labels = {'value': 'Lista Nominal',
+                'variable': ''}, 
+        title="Registered Voters per Municipality",
+        color_discrete_sequence=px.colors.qualitative.T10
+        )
 
     # make a dictionary for abbreviated municipality names
     abb_mun_dict = {
@@ -175,7 +178,13 @@ def create_total_bar_plot(df):
 
 def create_total_choropleth(df, geojson):
     
-    df_ln_qroo_totals = df.groupby(['Nombre Municipio'])[['Lista Hombres', 'Lista Mujeres', 'Lista Nominal']].sum().reset_index()
+    df_ln_qroo_totals = df.groupby(['Nombre Municipio'])[['Lista Nominal']].sum().reset_index()
+
+
+    ochre_scale = [
+        [0.0, '#4c78c8'],  # Blue
+        [1.0, '#f58518'],  # Light ochre (yellow)
+    ]
 
     fig_choropleth_totals = px.choropleth(df_ln_qroo_totals, 
                                 geojson=geojson, 
@@ -183,7 +192,7 @@ def create_total_choropleth(df, geojson):
                                 color='Lista Nominal',
                                 featureidkey="properties.NOMGEO",  # Adjust based on your GeoJSON properties
                                 projection="mercator",
-                                color_continuous_scale="Portland",
+                                color_continuous_scale=ochre_scale,
                                 title="Registered Voters per Municipality")
     fig_choropleth_totals.update_geos(fitbounds="locations", visible=False)
     
@@ -201,15 +210,27 @@ def create_total_choropleth(df, geojson):
 
     return fig_choropleth_totals
 
+#--------------------------------------------------------------------------
 
 def create_age_choropleth(df, geojson):
     # Aggregate data by MUNICIPIO
     df_grouped = df.groupby('MUNICIPIO').sum().reset_index()
 
     # Determine the predominant age range for each municipality
-    age_groups = df_grouped.columns[11:]
+    # age_groups = df_grouped.columns[11:]
 
-    df_grouped['Rango de Edad Predominante'] = df_grouped[age_groups].idxmax(axis=1)
+    age_groups = ['Men 18', 'Women 18', 'Non-Binary 18', 'Men 19', 'Women 19', 'Non-Binary 19',
+              'Men 20-24', 'Women 20-24', 'Non-Binary 20-24', 'Men 25-29', 'Women 25-29', 'Non-Binary 25-29',
+              'Men 30-34', 'Women 30-34', 'Non-Binary 30-34', 'Men 35-39', 'Women 35-39', 'Non-Binary 35-39',
+              'Men 40-44', 'Women 40-44', 'Non-Binary 40-44', 'Men 45-49', 'Women 45-49', 'Non-Binary 45-49',
+              'Men 50-54', 'Women 50-54', 'Non-Binary 50-54', 'Men 55-59', 'Women 55-59', 'Non-Binary 55-59',
+              'Men 60-64', 'Women 60-64', 'Non-Binary 60-64', 'Men 65+', 'Women 65+', 'Non-Binary 65+']
+
+    # Rename the columns from the 12th column onwards
+    df_grouped.columns = list(df_grouped.columns[:11]) + age_groups[:len(df_grouped.columns) - 11]
+
+
+    df_grouped['Predominant Age and Gender Group'] = df_grouped[age_groups].idxmax(axis=1)
 
     # when summing, pandas also concatenates the strings in "NOMBRE ENTIDAD"
     # so do some housekeeping
@@ -220,9 +241,9 @@ def create_age_choropleth(df, geojson):
         df_grouped,
         geojson=geojson,
         locations='MUNICIPIO',
-        color='Rango de Edad Predominante',
+        color='Predominant Age and Gender Group',
         featureidkey="properties.NOMGEO",
-        color_continuous_scale=px.colors.sequential.Plasma,
+        color_discrete_sequence=px.colors.qualitative.T10,
         projection="mercator",
         title="Predominant Gender and Age Range in Voter Registration"
     )
@@ -231,22 +252,28 @@ def create_age_choropleth(df, geojson):
 
     return fig
 
-
+#-------------------------------------------------------------------------------------
 def create_gender_proportion_choropleth(df, geojson_data):
     # Aggregate data by MUNICIPIO if not already aggregated
     df_grouped = df.groupby('Nombre Municipio').sum().reset_index()
 
     # Calculate the percentage of women registered voters
-    df_grouped['Porcentaje Mujeres'] = (df_grouped['Lista Mujeres'] / df_grouped['Lista Nominal']) * 100
+    df_grouped['Women Percentage'] = (df_grouped['Lista Mujeres'] / df_grouped['Lista Nominal']) * 100
+
+    ochre_scale = [
+        [0.0, '#4c78c8'],  # Blue
+        [1.0, '#f58518'],  # Light ochre (yellow)
+    ]
+    
 
     # Assuming `geojson` is your GeoJSON object for the municipalities
     fig = px.choropleth(
         df_grouped,
         geojson=geojson_data,
         locations='Nombre Municipio',
-        color='Porcentaje Mujeres',
+        color='Women Percentage',
         featureidkey="properties.NOMGEO",
-        color_continuous_scale=px.colors.sequential.Plasma,
+        color_continuous_scale=ochre_scale,
         projection="mercator",
         title="Percentage of Women in Voter Registration"
     )
@@ -268,7 +295,7 @@ def create_gender_proportion_choropleth(df, geojson_data):
     return fig
 
 
-
+#-----------------------------------------------------------------------------
 
 def create_winning_party_per_year_choropleth(selected_year, geojson, main_parties, df_dict):
     # This function now handles a single year's DataFrame and generates a choropleth map for that year.
@@ -292,22 +319,25 @@ def create_winning_party_per_year_choropleth(selected_year, geojson, main_partie
         winning_party = max(votes_by_party, key=votes_by_party.get)
         winning_party_by_municipality[municipality] = winning_party
 
-    df_map = pd.DataFrame(list(winning_party_by_municipality.items()), columns=['MUNICIPIO', 'Partido Ganador'])
+    df_map = pd.DataFrame(list(winning_party_by_municipality.items()), columns=['MUNICIPIO', 'Winning Party'])
     df_map['Year'] = selected_year
 
     fig = px.choropleth(
         df_map, 
         geojson=geojson, 
         locations='MUNICIPIO', 
-        color='Partido Ganador',
+        color='Winning Party',
         featureidkey="properties.NOMGEO",  
         projection="mercator",
+        color_discrete_sequence=px.colors.qualitative.T10,
     )
     fig.update_geos(fitbounds="locations", visible=False)
     fig.update_layout(title=f"Winning Party per Municipality, {selected_year}")
     
     return fig
 
+
+#--------------------------------------------------------------------------------------
 def plot_election_pie_chart(selected_year, selected_municipality, df_re_all_years, main_parties):
 
     # mapping years to their indices in the list of dataframes
@@ -337,14 +367,15 @@ def plot_election_pie_chart(selected_year, selected_municipality, df_re_all_year
     # create the pie chart
     df_votes = pd.DataFrame(list(votes_by_party.items()), columns = ['Party', 'Votes'])
     fig = px.pie(df_votes, values = 'Votes', names = 'Party', 
-                 title = f'Vote Distribution in {selected_municipality}, {selected_year}')
+                 title = f'Vote Distribution in {selected_municipality}, {selected_year}',
+                 color_discrete_sequence=px.colors.qualitative.T10)
     
     # Update the traces to remove the text labels
     fig.update_traces(textinfo='none', hoverinfo='label+percent')
 
     return fig
 
-
+#------------------------------------------------------------------------------------
 def plot_aggregated_votes_by_main_party_px(df_list, main_parties, selected_municipality, election_years):
     """
     Plots an interactive line plot with filled areas to zero for each main party and its alliances,
@@ -375,7 +406,8 @@ def plot_aggregated_votes_by_main_party_px(df_list, main_parties, selected_munic
 
     # create the plot
     fig = px.line(df_plot, x='Election Year', y='Total Votes', color='Party',
-                  line_shape='linear', title=f'Total Votes per Party (Including Alliances), in {selected_municipality}')
+                  line_shape='linear', title=f'Total Votes per Party (Including Alliances), in {selected_municipality}',
+                  color_discrete_sequence=px.colors.qualitative.T10)
     
     # customize the layout
     fig.update_traces(mode='lines', line=dict(width=2.5), fill='tozeroy')
@@ -394,6 +426,7 @@ def plot_aggregated_votes_by_main_party_px(df_list, main_parties, selected_munic
     
     return fig
 
+#----------------------------------------------------------------------------------------------
 
 # HELPER function to get the municipalities per selected year
 def get_municipalities_per_year(df_dict, selected_year):
@@ -405,7 +438,7 @@ def get_municipalities_per_year(df_dict, selected_year):
     # Retrieve and return a sorted list of unique municipalities
     return sorted(df_selected['MUNICIPIO'].unique())
 
-
+#-------------------------------------------------------------------------------------------------
 def create_voter_turnout_proportion_choropleth(df_resultados, selected_year, geojson_data):
     # Aggregate data by MUNICIPIO if not already aggregated
     df_grouped = df_resultados.groupby('MUNICIPIO').agg({
@@ -415,6 +448,11 @@ def create_voter_turnout_proportion_choropleth(df_resultados, selected_year, geo
 
     df_grouped['Porcentaje Votantes'] = df_grouped['TOTAL_VOTOS'] / df_grouped['LISTA_NOMINAL'] * 100
 
+    ochre_scale = [
+        [0.0, '#4c78c8'],  # Blue
+        [1.0, '#f58518'],  # Light ochre (yellow)
+    ]
+    
     # Assuming `geojson` is your GeoJSON object for the municipalities
     fig = px.choropleth(
         df_grouped,
@@ -422,9 +460,9 @@ def create_voter_turnout_proportion_choropleth(df_resultados, selected_year, geo
         locations='MUNICIPIO',
         color='Porcentaje Votantes',
         featureidkey="properties.NOMGEO",
-        color_continuous_scale=px.colors.sequential.YlOrRd,
+        color_continuous_scale=ochre_scale,
         projection="mercator",
-        title=f"Porcentaje de Votantes de Lista Nominal en {selected_year}"
+        title=f"Voter Turnout Percentage in {selected_year}"
     )
 
     fig.update_geos(fitbounds="locations", visible=False)
@@ -458,41 +496,46 @@ static_bar_totals = create_total_bar_plot(df_ln_sx_qroo)
 
 # Assuming you're fine with adding Bootstrap to your project
 app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
+app.css.append_css({'external_url': '/assets/styles.css'})
+colors = {
+    'background': '#111111',
+    'text': '#7FDBFF'
+}
 server = app.server
 
 # Layout
-app.layout = html.Div([
-    html.H1("Elections Dashboard", className='mb-4'),  # Added margin-bottom for spacing
+app.layout = dbc.Container([
+    html.H1("Elections Dashboard"),
     dbc.Row([
-        dbc.Col(
-            dcc.Dropdown(
-                id='year-dropdown',
-                options=[{'label': year, 'value': year} for year in sorted(set(election_years))],
-                value=sorted(set(election_years))[0],  # Default to the earliest year
-            ),
-            width={"size": 6, "offset": 0},  # Adjust size as needed
-            className='mb-4'  # Added margin-bottom for spacing
-        ),
+        dbc.Col(dcc.Dropdown(
+            id='year-dropdown',
+            options=[{'label': year, 'value': year} for year in sorted(set(election_years))],
+            value=sorted(set(election_years))[0],  # Default to the earliest year
+            className='dropdown'
+        ), width = 12, lg = 6, className = 'mb-2'),
+        dbc.Col(dcc.Dropdown(
+            id='municipio-dropdown',
+            className='dropdown'
+        ), width = 12, lg = 6, className = 'mb-2')
     ]),
     dbc.Row([
-        dbc.Col(
-            dcc.Dropdown(
-                id='municipio-dropdown',
-                # Options set dynamically based on selected year
-            ),
-            width={"size": 6, "offset": 0},  # Adjust size as needed
-            className='mb-4'  # Added margin-bottom for spacing
-        ),
+        dbc.Col(dcc.Graph(id='time-series-plot', className='graph-container'), width = 12, lg = 6),
+        dbc.Col(dcc.Graph(id='pie-chart', className='graph-container'), width = 12, lg = 6)
     ]),
-    dcc.Graph(id='time-series-plot'),
-    dcc.Graph(id='pie-chart'),
-    dcc.Graph(id='choropleth-winning'),
-    dcc.Graph(id='choropleth-turnout'),
-    dcc.Graph(id='choropleth-women', figure=static_choropleth_percentage_women),
-    dcc.Graph(id='choropleth-age', figure=static_choropleth_age),
-    dcc.Graph(id='bar-total-voters', figure=static_bar_totals),
-    dcc.Graph(id='choropleth-total-voters', figure=static_choropleth_totals)
-])
+    dbc.Row([
+        dbc.Col(dcc.Graph(id='choropleth-total-voters', figure = static_choropleth_totals, className='graph-container'), width = 12, lg = 6),
+        dbc.Col(dcc.Graph(id='choropleth-turnout', className='graph-container'), width = 12, lg = 6)
+    ]),
+    dbc.Row([
+        dbc.Col(dcc.Graph(id='choropleth-age', figure=static_choropleth_age, className='graph-container'), width = 12, lg = 6),
+        dbc.Col(dcc.Graph(id='choropleth-women', figure=static_choropleth_percentage_women, className='graph-container'), width = 12, lg = 6)
+    ]),
+    dbc.Row([
+        dbc.Col(dcc.Graph(id='choropleth-winning', className='graph-container'), width = 12, lg = 6),
+        dbc.Col(dcc.Graph(id='bar-total-voters', figure=static_bar_totals, className='graph-container'), width = 12, lg = 6)
+    ])
+], fluid=True)
+
 
 # Callback to update municipio dropdown based on year selection
 @app.callback(
@@ -550,4 +593,4 @@ def update_visualizations(selected_year, selected_municipality):
 
 
 if __name__ == '__main__':
-    app.run_server()
+    app.run_server(debug=True)

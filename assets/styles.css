@@ -1,0 +1,24 @@
+/* assets/styles.css */
+body {
+    font-family: 'Arial', sans-serif;
+    background-color: #d9dde0;
+}
+
+h1 {
+    color: #343a40;
+    text-align: center;
+    margin-top: 20px;
+    margin-bottom: 20px;
+}
+
+.dropdown {
+    margin-bottom: 20px;
+}
+
+.graph-container {
+    background: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    margin-bottom: 20px;
+}
