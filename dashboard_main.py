@@ -126,16 +126,16 @@ df_dict = {
 
 def create_total_bar_plot(df):
 
-    df.rename(columns={'Lista Hombres': 'Registered Men', 'Lista Mujeres': 'Registered Women', 'Lista Nominal': 'Total Registered'}, inplace = True)
+    df.rename(columns={'Nombre Municipio': 'Municipality', 'Lista Hombres': 'Registered Men', 'Lista Mujeres': 'Registered Women', 'Lista Nominal': 'Total Registered'}, inplace = True)
 
 
     # group data
 
-    df_ln_qroo_totals = df.groupby(['Nombre Municipio'])[['Registered Men', 'Registered Women', 'Total Registered']].sum().reset_index()
+    df_ln_qroo_totals = df.groupby('Municipality')[['Registered Men', 'Registered Women', 'Total Registered']].sum().reset_index()
 
     fig_bar_totals = px.bar(
         df_ln_qroo_totals,
-        x='Nombre Municipio', 
+        x='Municipality', 
         y=['Registered Men', 'Registered Women'],
         labels = {'value': 'Lista Nominal',
                 'variable': ''}, 
@@ -160,8 +160,8 @@ def create_total_bar_plot(df):
 
     fig_bar_totals.update_layout(
         xaxis = dict(
-            tickvals = df_ln_qroo_totals['Nombre Municipio'],  # Original names
-            ticktext = [abb_mun_dict.get(name, name) for name in  df_ln_qroo_totals['Nombre Municipio']]  # Abbreviated names
+            tickvals = df_ln_qroo_totals['Municipality'],  # Original names
+            ticktext = [abb_mun_dict.get(name, name) for name in  df_ln_qroo_totals['Municipality']]  # Abbreviated names
         ),
         yaxis = dict(title = 'Registered Voters'),
         plot_bgcolor = 'rgba(0,0,0,0)', # transparent background
@@ -178,7 +178,7 @@ def create_total_bar_plot(df):
 
 def create_total_choropleth(df, geojson):
     
-    df_ln_qroo_totals = df.groupby(['Nombre Municipio'])[['Lista Nominal']].sum().reset_index()
+    df_ln_qroo_totals = df.groupby('Nombre Municipio')[['Lista Nominal']].sum().reset_index()
 
 
     ochre_scale = [
@@ -507,16 +507,26 @@ server = app.server
 app.layout = dbc.Container([
     html.H1("Elections Dashboard"),
     dbc.Row([
-        dbc.Col(dcc.Dropdown(
+        dbc.Col([
+            html.Div([
+            html.Label('Select Election Year:'),
+            dcc.Dropdown(
             id='year-dropdown',
             options=[{'label': year, 'value': year} for year in sorted(set(election_years))],
-            value=sorted(set(election_years))[0],  # Default to the earliest year
+            value=sorted(set(election_years))[-1],  # Default to the latest year
             className='dropdown'
-        ), width = 12, lg = 6, className = 'mb-2'),
-        dbc.Col(dcc.Dropdown(
+        )
+    ])
+    ], width = 12, lg = 6, className = 'mb-2'),
+        dbc.Col([
+            html.Div([
+                html.Label('Select Municipality:'),
+                dcc.Dropdown(
             id='municipio-dropdown',
             className='dropdown'
-        ), width = 12, lg = 6, className = 'mb-2')
+        )
+        ])
+    ], width = 12, lg = 6, className = 'mb-2')
     ]),
     dbc.Row([
         dbc.Col(dcc.Graph(id='time-series-plot', className='graph-container'), width = 12, lg = 6),
@@ -547,7 +557,7 @@ def set_municipio_options(selected_year):
     # Assuming a function that returns municipios for a given year
     municipalities = get_municipalities_per_year(df_dict, selected_year)
     options = [{'label': m, 'value': m} for m in municipalities]
-    new_value = municipalities[0] if municipalities else None  # Default to first municipality or None
+    new_value = 'OTHON P. BLANCO' if 'OTHON P. BLANCO' in municipalities else (municipalities[0] if municipalities else None)  # Default to first municipality or None
     return options, new_value
 
 # Callback to update interactive visualizations
@@ -593,4 +603,4 @@ def update_visualizations(selected_year, selected_municipality):
 
 
 if __name__ == '__main__':
-    app.run_server()
+    app.run_server(debug = True)
